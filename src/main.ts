@@ -30,8 +30,6 @@ declare global {
 
 // 1. render state
 
-// TODO parse state to make tests
-// TODO snake body -- | depending on orientation
 function renderCell (cell: Cell) {
   let text = ({
     empty: '0',
@@ -42,7 +40,6 @@ function renderCell (cell: Cell) {
   return `<div class='${cell}'>${text}</div>`
 }
 
-// TODO dedent function
 function renderGame (snake: Snake) {
   let field = empty(snake);
 
@@ -89,11 +86,15 @@ window.snake = {
   direction: 'down',
 }
 
-// TODO no reverse
-//      detect collision with a wall
-//      eat an egg
-//      advance on arrow press
-//      advance on timer
+// TODO
+//    󱇩 advance on arrow press
+//    󱇩 advance on timer
+//    󱇩 no reverse
+//    󱇩 detect collision with a wall
+//    󱇩 eat an egg
+//     parse state to make tests
+//    💅snake body -- | depending on orientation
+//    💅dedent function
 
 // 3. evolve state
 
