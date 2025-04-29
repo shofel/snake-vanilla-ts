@@ -8,18 +8,18 @@ type Direction = 'up' | 'down' | 'left' | 'right'
 let Point = (row: number, col: number) => ({row, col})
 let Points = (...xs: Array<[number, number]>) => xs.map(x => Point(...x))
 
-let head = (snake: Point[]): Point => snake[snake.length - 1]
+let head = (snake: Point[]): Point => snake[0]
 
 interface Size {
   rows: number,
   cols: number,
 }
 
-// TODO invert snake
 type Snake = {
   rows: number,
   cols: number,
   direction: Direction,
+  /* Snake is an array of points, ordered from the head to the tail. */
   snake: Point[],
   eggs: Point[],
 }
@@ -35,9 +35,9 @@ declare global {
 function renderCell (cell: Cell) {
   let text = ({
     empty: '0',
-    body: '.',
-    head: 'o',
-    egg: '&',
+    body: '🐄', // ⏺
+    head: '🐮', // 󰮯 pacman is awesome, but doesn't render in web
+    egg: '🥚', // 🥚
   })[cell];
   return `<div class='${cell}'>${text}</div>`
 }
@@ -108,11 +108,13 @@ let move = (point: Point, direction: Direction) => {
   return {row: point.row + row, col: point.col + col,}
 }
 
-function step (prev: Snake): Snake {
-  let snake = prev.snake.slice(1) // copy and remove tail
-  snake[snake.length] = move(head(snake), prev.direction) // advance head
+function step (state: Snake): Snake {
+  let snake = [
+    move(head(state.snake), state.direction), // new head
+    ...state.snake.slice(0, -1), // old without head
+  ]
   return {
-    ...prev,
+    ...state,
     snake,
   }
 }
