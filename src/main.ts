@@ -1,4 +1,29 @@
+/**
+ * A snake game, naive and with a few funny bugs.
+ *
+ * # What else to Improve
+ * ## Nice
+ *    💅set favicon
+ *     parse state to make tests, and make tests. Maybe generative
+ *    💅snake body -- | depending on orientation => render intersections
+ *    󱇩 option: advance on timer
+ *     pluggable render function
+ *    💅render state with morphdom
+ *    💅render state with canvas
+ * ## Boring
+ *    󱇩 integrity of a spawned snake
+ *    󱇩 go around the world
+ *    󱇩 restrictions: no reverse
+ *    󱇩 detect collisions: with a wall and with snake itself
+ *    💅add a license
+ *    💅the `dedent` function for beautier raw html
+ *    💅fix console error "downloadable font: rejected by sanitizer"
+ *    💅support skins. Chars or sprites for cells
+*/
+
 import './style.css'
+
+/* The model */
 
 type Point = {row: number, col: number}
 type Cell = 'empty' | 'body' | 'head' | 'egg'
@@ -6,33 +31,25 @@ type Field = Cell[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
 
 let point = (row: number, col: number) => ({row, col})
-let points = (...xs: Array<[number, number]>) => xs.map(x => point(...x))
-
 let head = (snake: Point[]): Point => snake[0]
-let size = ({rows, cols}: Size) => ({rows, cols})
 
 interface Size {
   rows: number,
   cols: number,
 }
 
-/* State of the Snake game. */
-type Snake = {
-  rows: number,
-  cols: number,
+/** State of a Snake game. */
+interface Snake {
+  size: Size,
   direction: Direction,
   /* Snake is an array of points, ordered from the head to the tail. */
   snake: Point[],
   eggs: Point[],
 }
 
-declare global {
-  interface Window { snake: () => Snake; }
-}
+/* Render state as html */
 
-// 1. render state
-
-function renderCell (cell: Cell) {
+function renderCell (cell: Cell): HTMLElement['innerHTML'] {
   let text = ({
     empty: '0',
     body: '🐄', // ⏺
@@ -48,8 +65,8 @@ function empty ({cols: width, rows: height}: Size): Field {
   return rows
 }
 
-function renderGame (state: Snake): string {
-  let field = empty(size(state));
+function renderGame (state: Snake): HTMLElement['innerHTML'] {
+  let field = empty(state.size);
 
   for (let {row, col} of state.snake) {
     field[row][col] = 'body'
@@ -78,22 +95,9 @@ function renderGame (state: Snake): string {
   `
 }
 
-// 2. state
+/* Evolve state */
 
-// TODO
-//    󱇩 go around
-//    󱇩 advance on timer
-//    󱇩 no reverse
-//    󱇩 detect collision with a wall
-//     parse state to make tests
-//    💅snake body -- | depending on orientation
-//    💅dedent function
-//    💅fix "downloadable font: rejected by sanitizer"
-//    💅render state with morphdom
-
-// 3. evolve state
-
-let move = (point: Point, direction: Direction) => {
+function move(point: Point, direction: Direction): Point {
   let [row, col] = ({
     up: [-1, 0],
     down: [1, 0],
@@ -101,14 +105,15 @@ let move = (point: Point, direction: Direction) => {
     right: [0, 1],
   })[direction]
 
-  return {row: point.row + row, col: point.col + col,}
+  return { row: point.row + row, col: point.col + col, }
 }
 
-function randomPoint ({rows, cols}: Size) {
+function randomPoint ({rows, cols}: Size): Point {
   let rnd = (length: number) => Math.floor(Math.random() * length)
   return point(rnd(rows), rnd(cols))
 }
 
+/** Eggs at the end of turn */
 function eggs (size: Size, eggs_: Snake['eggs'], head: Point)
 : [eaten: boolean, Snake['eggs']] {
   let newEggs = eggs_.slice()
@@ -127,7 +132,7 @@ function eggs (size: Size, eggs_: Snake['eggs'], head: Point)
 
 function step (state: Snake): Snake {
   let newHead = move(head(state.snake), state.direction)
-  let [eaten, newEggs] = eggs(size(state), state.eggs, newHead)
+  let [eaten, newEggs] = eggs(state.size, state.eggs, newHead)
   let newSnake = [
     newHead,
     ...(eaten ? state.snake : state.snake.slice(0, -1))
@@ -140,16 +145,15 @@ function step (state: Snake): Snake {
   }
 }
 
-// 4. Read signals from keyboard and pass them to the state
-//    keyboard -> direction -> step
-
-function listenArrows (el: HTMLElement, f: (direction: Direction) => void) {
+/** Read signals from keyboard to pass them to the game state
+    keyboard -> direction -> state */
+function listenArrows (el: HTMLElement, fx: (direction: Direction) => void) {
   el.addEventListener('keydown', ({key}) => {
     switch (key) {
-      case 'ArrowUp'   :f('up')   ;break;
-      case 'ArrowDown' :f('down') ;break;
-      case 'ArrowLeft' :f('left') ;break;
-      case 'ArrowRight':f('right');break;
+      case 'ArrowUp'   :fx('up')   ;break;
+      case 'ArrowDown' :fx('down') ;break;
+      case 'ArrowLeft' :fx('left') ;break;
+      case 'ArrowRight':fx('right');break;
     }
   })
 }
@@ -159,27 +163,42 @@ function updateDom (el:HTMLElement, state: Snake) {
   el.innerHTML = innerHTML
 }
 
-// Main
+/* Initial state */
 
-window.snake = () => context.snake
+let randomPoints = (size: Size, count: number): Point[] =>
+  Array(count).fill(null).map(() => randomPoint(size))
 
-let context = {
-  body: document.body,
-  el: document.querySelector<HTMLDivElement>('#app')!,
-  updateDom: () => updateDom(context.el, context.snake),
+let createContext = (
+  el: HTMLElement, size: Size, snakeSize: number, eggsCount: number
+) => ({
+  updateDom: () => updateDom(el, context.snake),
   snake: {
-    cols: 15,
-    rows: 15,
-    snake: points([0, 0], [0, 1], [0, 2]),
-    eggs: points([2, 2], [5, 2]),
+    size,
+    snake: randomPoints(size, snakeSize),
+    eggs: randomPoints(size, eggsCount),
     direction: 'down',
   } as Snake,
+})
+
+/* Run */
+
+const env = {
+  body: document.body,
+  el: document.querySelector<HTMLDivElement>('#app')!,
 }
 
-listenArrows(context.body, (direction: Direction) => {
+let context = createContext(env.el, {cols: 10, rows: 10}, 3, 3)
+context.updateDom()
+
+listenArrows(env.body, (direction: Direction) => {
   context.snake.direction = direction
   context.snake = step(context.snake)
   context.updateDom()
 })
 
-context.updateDom()
+/* Expose */
+
+declare global {
+  interface Window { snake: () => Snake; }
+}
+window.snake = () => context.snake
