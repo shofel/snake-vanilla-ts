@@ -5,8 +5,8 @@ type Cell = 'empty' | 'body' | 'head' | 'egg'
 type Field = Cell[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
 
-let Point = (row: number, col: number) => ({row, col})
-let Points = (...xs: Array<[number, number]>) => xs.map(x => Point(...x))
+let point = (row: number, col: number) => ({row, col})
+let points = (...xs: Array<[number, number]>) => xs.map(x => point(...x))
 
 let head = (snake: Point[]): Point => snake[0]
 let size = ({rows, cols}: Size) => ({rows, cols})
@@ -81,11 +81,10 @@ function renderGame (state: Snake): string {
 // 2. state
 
 // TODO
-//    󱇩 advance on arrow press
+//    󱇩 grow when eating en egg
 //    󱇩 advance on timer
 //    󱇩 no reverse
 //    󱇩 detect collision with a wall
-//    󱇩 eat an egg
 //     parse state to make tests
 //    💅snake body -- | depending on orientation
 //    💅dedent function
@@ -105,14 +104,42 @@ let move = (point: Point, direction: Direction) => {
   return {row: point.row + row, col: point.col + col,}
 }
 
-function step (state: Snake): Snake {
-  let snake = [
-    move(head(state.snake), state.direction), // new head
-    ...state.snake.slice(0, -1), // old without head
+/* Advance position of the snake. */
+function snake (_snake: Snake['snake'], direction: Snake['direction'])
+: Snake['snake'] {
+  return [
+    move(head(_snake), direction), // the new head
+    ..._snake.slice(0, -1), // plus the old tail
   ]
+}
+
+function randomPoint ({rows, cols}: Size) {
+  let rnd = (length: number) => Math.floor(Math.random() * length)
+  return point(rnd(rows), rnd(cols))
+}
+
+function eggs (size: Size, eggs_: Snake['eggs'], head: Point): Snake['eggs'] {
+  console.log(eggs_)
+  let newEggs = eggs_.slice()
+
+  let eatenIdx =
+    eggs_.findIndex(egg => egg.col == head.col &&
+                           egg.row == head.row)
+  if (eatenIdx != -1) {
+    newEggs[eatenIdx] = randomPoint(size)
+  }
+
+  return newEggs
+}
+
+function step (state: Snake): Snake {
+  let newSnake = snake(state.snake, state.direction)
+  let newEggs = eggs(size(state), state.eggs, head(newSnake))
+
   return {
     ...state,
-    snake,
+    snake: newSnake,
+    eggs: newEggs,
   }
 }
 
@@ -146,8 +173,8 @@ let context = {
   snake: {
     cols: 15,
     rows: 15,
-    snake: Points([0, 0], [0, 1], [0, 2]),
-    eggs: Points([2, 2]),
+    snake: points([0, 0], [0, 1], [0, 2]),
+    eggs: points([2, 2]),
     direction: 'down',
   } as Snake,
 }
