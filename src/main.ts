@@ -9,12 +9,14 @@ let Point = (row: number, col: number) => ({row, col})
 let Points = (...xs: Array<[number, number]>) => xs.map(x => Point(...x))
 
 let head = (snake: Point[]): Point => snake[0]
+let size = ({rows, cols}: Size) => ({rows, cols})
 
 interface Size {
   rows: number,
   cols: number,
 }
 
+/* State of the Snake game. */
 type Snake = {
   rows: number,
   cols: number,
@@ -25,7 +27,7 @@ type Snake = {
 }
 
 declare global {
-  interface Window { snake: Snake; }
+  interface Window { snake: () => Snake; }
 }
 
 // 1. render state
@@ -35,24 +37,30 @@ function renderCell (cell: Cell) {
     empty: '0',
     body: '🐄', // ⏺
     head: '🐮', // 󰮯 pacman is awesome, but doesn't render in web
-    egg: '🥚', // 🥚
+    egg: '🍀', // 🥚
   })[cell];
   return `<div class='${cell}'>${text}</div>`
 }
 
-function renderGame (snake: Snake) {
-  let field = empty(snake);
+function empty ({cols: width, rows: height}: Size): Field {
+  let row = () => Array(width).fill('empty')
+  let rows = Array(height).fill(null).map(row)
+  return rows
+}
 
-  for (let {row, col} of snake.snake) {
+function renderGame (state: Snake): string {
+  let field = empty(size(state));
+
+  for (let {row, col} of state.snake) {
     field[row][col] = 'body'
   }
 
   {
-    let {row, col} = head(snake.snake)
+    let {row, col} = head(state.snake)
     field[row][col] = 'head'
   }
 
-  for (let {row, col} of snake.eggs) {
+  for (let {row, col} of state.eggs) {
     field[row][col] = 'egg'
   }
 
@@ -72,20 +80,6 @@ function renderGame (snake: Snake) {
 
 // 2. state
 
-function empty ({cols: width, rows: height}: Size): Field {
-  let row = () => Array(width).fill('empty')
-  let rows = Array(height).fill(null).map(row)
-  return rows
-}
-
-window.snake = {
-  cols: 5,
-  rows: 5,
-  snake: Points([0, 0], [0, 1], [0, 2]),
-  eggs: Points([2, 2]),
-  direction: 'down',
-}
-
 // TODO
 //    󱇩 advance on arrow press
 //    󱇩 advance on timer
@@ -95,6 +89,8 @@ window.snake = {
 //     parse state to make tests
 //    💅snake body -- | depending on orientation
 //    💅dedent function
+//    💅fix "downloadable font: rejected by sanitizer"
+//    💅render state with morphdom
 
 // 3. evolve state
 
@@ -120,12 +116,46 @@ function step (state: Snake): Snake {
   }
 }
 
-window.step = step
+// 4. Read signals from keyboard and pass them to the state
+//    keyboard -> direction -> step
 
-// 4. change direction
+function listenArrows (el: HTMLElement, f: (direction: Direction) => void) {
+  el.addEventListener('keydown', ({key}) => {
+    switch (key) {
+      case 'ArrowUp'   :f('up')   ;break;
+      case 'ArrowDown' :f('down') ;break;
+      case 'ArrowLeft' :f('left') ;break;
+      case 'ArrowRight':f('right');break;
+    }
+  })
+}
+
+function updateDom (el:HTMLElement, state: Snake) {
+  let innerHTML = renderGame(state)
+  el.innerHTML = innerHTML
+}
 
 // Main
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  ${renderGame(step(window.snake))}
-`
+window.snake = () => context.snake
+
+let context = {
+  body: document.body,
+  el: document.querySelector<HTMLDivElement>('#app')!,
+  updateDom: () => updateDom(context.el, context.snake),
+  snake: {
+    cols: 15,
+    rows: 15,
+    snake: Points([0, 0], [0, 1], [0, 2]),
+    eggs: Points([2, 2]),
+    direction: 'down',
+  } as Snake,
+}
+
+listenArrows(context.body, (direction: Direction) => {
+  context.snake.direction = direction
+  context.snake = step(context.snake)
+  context.updateDom()
+})
+
+context.updateDom()
