@@ -81,7 +81,7 @@ function renderGame (state: Snake): string {
 // 2. state
 
 // TODO
-//    󱇩 grow when eating en egg
+//    󱇩 go around
 //    󱇩 advance on timer
 //    󱇩 no reverse
 //    󱇩 detect collision with a wall
@@ -104,37 +104,34 @@ let move = (point: Point, direction: Direction) => {
   return {row: point.row + row, col: point.col + col,}
 }
 
-/* Advance position of the snake. */
-function snake (_snake: Snake['snake'], direction: Snake['direction'])
-: Snake['snake'] {
-  return [
-    move(head(_snake), direction), // the new head
-    ..._snake.slice(0, -1), // plus the old tail
-  ]
-}
-
 function randomPoint ({rows, cols}: Size) {
   let rnd = (length: number) => Math.floor(Math.random() * length)
   return point(rnd(rows), rnd(cols))
 }
 
-function eggs (size: Size, eggs_: Snake['eggs'], head: Point): Snake['eggs'] {
-  console.log(eggs_)
+function eggs (size: Size, eggs_: Snake['eggs'], head: Point)
+: [eaten: boolean, Snake['eggs']] {
   let newEggs = eggs_.slice()
 
   let eatenIdx =
     eggs_.findIndex(egg => egg.col == head.col &&
                            egg.row == head.row)
-  if (eatenIdx != -1) {
+  let eaten = eatenIdx != -1
+
+  if (eaten) {
     newEggs[eatenIdx] = randomPoint(size)
   }
 
-  return newEggs
+  return [eaten, newEggs]
 }
 
 function step (state: Snake): Snake {
-  let newSnake = snake(state.snake, state.direction)
-  let newEggs = eggs(size(state), state.eggs, head(newSnake))
+  let newHead = move(head(state.snake), state.direction)
+  let [eaten, newEggs] = eggs(size(state), state.eggs, newHead)
+  let newSnake = [
+    newHead,
+    ...(eaten ? state.snake : state.snake.slice(0, -1))
+  ]
 
   return {
     ...state,
@@ -174,7 +171,7 @@ let context = {
     cols: 15,
     rows: 15,
     snake: points([0, 0], [0, 1], [0, 2]),
-    eggs: points([2, 2]),
+    eggs: points([2, 2], [5, 2]),
     direction: 'down',
   } as Snake,
 }
