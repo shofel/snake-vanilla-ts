@@ -1,26 +1,26 @@
 import './style.css'
 
 type Point = {row: number, col: number}
-// TODO emoji for cell status
-// tail is the whole body except for head
-type Cell = 'empty' | 'tail' | 'head' | 'egg'
+type Cell = 'empty' | 'body' | 'head' | 'egg'
 type Field = Cell[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
 
 let Point = (row: number, col: number) => ({row, col})
 let Points = (...xs: Array<[number, number]>) => xs.map(x => Point(...x))
 
+let head = (snake: Point[]): Point => snake[snake.length - 1]
+
 interface Size {
   rows: number,
   cols: number,
 }
 
+// TODO invert snake
 type Snake = {
   rows: number,
   cols: number,
   direction: Direction,
-  tail: Point[],
-  head: Point,
+  snake: Point[],
   eggs: Point[],
 }
 
@@ -35,7 +35,7 @@ declare global {
 function renderCell (cell: Cell) {
   let text = ({
     empty: '0',
-    tail: '.',
+    body: '.',
     head: 'o',
     egg: '&',
   })[cell];
@@ -46,12 +46,12 @@ function renderCell (cell: Cell) {
 function renderGame (snake: Snake) {
   let field = empty(snake);
 
-  for (let {row, col} of snake.tail) {
-    field[row][col] = 'tail'
+  for (let {row, col} of snake.snake) {
+    field[row][col] = 'body'
   }
 
   {
-    let {row, col} = snake.head
+    let {row, col} = head(snake.snake)
     field[row][col] = 'head'
   }
 
@@ -84,27 +84,45 @@ function empty ({cols: width, rows: height}: Size): Field {
 window.snake = {
   cols: 5,
   rows: 5,
-  head: Point(0, 2),
-  tail: Points([0, 0], [0, 1]),
+  snake: Points([0, 0], [0, 1], [0, 2]),
   eggs: Points([2, 2]),
-  direction: 'up',
+  direction: 'down',
 }
+
+// TODO no reverse
+//      detect collision with a wall
+//      eat an egg
+//      advance on arrow press
+//      advance on timer
 
 // 3. evolve state
 
-function step (state: Snake): Snake {
-  // find head
-  // find tail
-  // advance head
-  //   replace with body
-  //   add head in direction
-  // remove tail
+let move = (point: Point, direction: Direction) => {
+  let [row, col] = ({
+    up: [-1, 0],
+    down: [1, 0],
+    left: [0, -1],
+    right: [0, 1],
+  })[direction]
+
+  return {row: point.row + row, col: point.col + col,}
 }
+
+function step (prev: Snake): Snake {
+  let snake = prev.snake.slice(1) // copy and remove tail
+  snake[snake.length] = move(head(snake), prev.direction) // advance head
+  return {
+    ...prev,
+    snake,
+  }
+}
+
+window.step = step
 
 // 4. change direction
 
 // Main
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  ${renderGame(window.snake)}
+  ${renderGame(step(window.snake))}
 `
