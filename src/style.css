@@ -25,6 +25,17 @@ body {
   margin: var(--cell-size);
 }
 
+.field.gameover::before {
+  content: '';
+  position: absolute;
+  top:0;
+  left:0;
+  width: 100vw;
+  height: 100vh;
+  background-color: red;
+  opacity: 0.6;
+}
+
 .field > .row {
   display: flex;
 }
