@@ -188,6 +188,10 @@ function listenArrows (el: HTMLElement, fx: (direction: Direction) => void) {
 function updateDom (el:HTMLElement, state: Snake) {
   let innerHTML = renderGame(state)
   el.innerHTML = innerHTML
+
+  if (state.status === 'gameover') {
+    el.addEventListener('click', () => location.reload())
+  }
 }
 
 /* Initial state */
