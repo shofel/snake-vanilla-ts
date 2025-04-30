@@ -185,24 +185,31 @@ function listenArrows (el: HTMLElement, fx: (direction: Direction) => void) {
   })
 }
 
+function directions (head: HTMLElement, x: number, y: number): Direction[] {
+  if (!head) return ['right']
+
+  let {
+    offsetHeight: height,
+    offsetLeft: left,
+    offsetWidth: width,
+    offsetTop: top,
+  } = head
+
+  let ret: Direction[] = []
+
+  if (x < left) ret.push('left');
+  if (left + width < x) ret.push('right');
+  if (y < top) ret.push('up');
+  if (y > top + height) ret.push('down');
+
+  return ret
+}
+
 /* Control the snake with clicks or taps. */
 function listenClicks (el: HTMLElement, fx: (direction: Direction) => void) {
-  el.addEventListener('mousedown', (e: MouseEvent) => {
-    let head = el.querySelector('.head')
-
-    if (!head) return fx('right')
-
-    let {
-      offsetHeight: height,
-      offsetLeft: left,
-      offsetWidth: width,
-      offsetTop: top,
-    } = head as HTMLElement
-
-    if (e.x < left) fx('left');
-    if (left + width < e.x) fx('right');
-    if (e.y < top) fx('up');
-    if (e.y > top + height) fx('down');
+  el.addEventListener('mousedown', ({x, y}: MouseEvent) => {
+    let head = el.querySelector('.head') as HTMLElement
+    for (let d of directions(head, x, y)) fx(d)
   })
 }
 
@@ -251,9 +258,26 @@ function start() {
 
 start()
 
-/* Expose */
+/* View: cursor shape */
+document.body.addEventListener('mousemove', function ({x, y}) {
+  let head = document.querySelector('.head') as HTMLElement
+  let d = directions(head, x, y)
 
-declare global {
-  interface Window { snake: () => Snake; }
-}
-window.snake = () => context.snake
+  let cursor = (() => {
+    let lateral = ''
+    let vertical = ''
+
+    if (d.includes('left')) lateral = 'w'
+    if (d.includes('right')) lateral = 'e'
+    if (d.includes('up')) vertical = 'n'
+    if (d.includes('down')) vertical = 's'
+
+    let vl = vertical + lateral
+
+    if (vl === '') return 'crosshair'
+
+    return vl + '-resize'
+  })()
+
+  document.body.style.cursor = cursor
+})
