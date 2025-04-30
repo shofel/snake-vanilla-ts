@@ -185,13 +185,25 @@ function listenArrows (el: HTMLElement, fx: (direction: Direction) => void) {
   })
 }
 
-function updateDom (el:HTMLElement, state: Snake) {
-  let innerHTML = renderGame(state)
-  el.innerHTML = innerHTML
+/* Control the snake with clicks or taps. */
+function listenClicks (el: HTMLElement, fx: (direction: Direction) => void) {
+  el.addEventListener('mousedown', (e: MouseEvent) => {
+    let head = el.querySelector('.head')
 
-  if (state.status === 'gameover') {
-    el.addEventListener('click', start, {once: true})
-  }
+    if (!head) return fx('right')
+
+    let {
+      offsetHeight: height,
+      offsetLeft: left,
+      offsetWidth: width,
+      offsetTop: top,
+    } = head as HTMLElement
+
+    if (e.x < left) fx('left');
+    if (left + width < e.x) fx('right');
+    if (e.y < top) fx('up');
+    if (e.y > top + height) fx('down');
+  })
 }
 
 /* Initial state */
@@ -200,9 +212,8 @@ let randomPoints = (size: Size, count: number): Point[] =>
   Array(count).fill(null).map(() => randomPoint(size))
 
 let createContext = (
-  el: HTMLElement, size: Size, snakeSize: number, eggsCount: number
+  size: Size, snakeSize: number, eggsCount: number
 ) => ({
-  updateDom: () => updateDom(el, context.snake),
   snake: {
     size,
     snake: randomPoints(size, snakeSize),
@@ -219,18 +230,23 @@ const env = {
   el: document.querySelector<HTMLDivElement>('#app')!,
 }
 
-listenArrows(env.body, (direction: Direction) => {
+function onDirection (direction: Direction) {
+  if (context.snake.status === 'gameover') start()
+
   context.snake.direction = direction
   context.snake = step(context.snake)
-  context.updateDom()
-})
+  env.el.innerHTML = renderGame(context.snake)
+}
 
-let options = [env.el, { cols: 5, rows: 5 }, 3, 3] as const
+listenArrows(env.body, onDirection)
+listenClicks(env.body, onDirection)
+
+let options = [{ cols: 5, rows: 5 }, 3, 3] as const
 let context = createContext(...options)
 
 function start() {
   context = createContext(...options)
-  context.updateDom()
+  env.el.innerHTML = renderGame(context.snake)
 }
 
 start()
