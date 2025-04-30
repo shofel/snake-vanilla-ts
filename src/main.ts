@@ -64,7 +64,7 @@ type Snake = {
 
 function renderCell (cell: Cell): HTMLElement['innerHTML'] {
   let text = ({
-    empty: '0',
+    empty: 'o',
     body: '🐄', // ⏺
     head: '🐮', // 󰮯 pacman is awesome, but doesn't render in web
     egg: '🍀', // 🥚
@@ -190,7 +190,7 @@ function updateDom (el:HTMLElement, state: Snake) {
   el.innerHTML = innerHTML
 
   if (state.status === 'gameover') {
-    el.addEventListener('click', () => location.reload())
+    el.addEventListener('click', start, {once: true})
   }
 }
 
@@ -219,14 +219,21 @@ const env = {
   el: document.querySelector<HTMLDivElement>('#app')!,
 }
 
-let context = createContext(env.el, {cols: 5, rows: 5}, 3, 3)
-context.updateDom()
-
 listenArrows(env.body, (direction: Direction) => {
   context.snake.direction = direction
   context.snake = step(context.snake)
   context.updateDom()
 })
+
+let options = [env.el, { cols: 5, rows: 5 }, 3, 3] as const
+let context = createContext(...options)
+
+function start() {
+  context = createContext(...options)
+  context.updateDom()
+}
+
+start()
 
 /* Expose */
 
