@@ -219,12 +219,12 @@ let randomPoints = (size: Size, count: number): Point[] =>
   Array(count).fill(null).map(() => randomPoint(size))
 
 let createContext = (
-  size: Size, snakeSize: number, eggsCount: number
+  {size, snake, eggs}: {size: Size, snake: number, eggs: number}
 ) => ({
   snake: {
     size,
-    snake: randomPoints(size, snakeSize),
-    eggs: randomPoints(size, eggsCount),
+    snake: randomPoints(size, snake),
+    eggs: randomPoints(size, eggs),
     direction: 'down',
     status: 'playing',
   } as Snake,
@@ -248,11 +248,27 @@ function onDirection (direction: Direction) {
 listenArrows(env.body, onDirection)
 listenClicks(env.body, onDirection)
 
-let options = [{ cols: 5, rows: 5 }, 3, 3] as const
-let context = createContext(...options)
+let options = (() => {
+  let s = new URLSearchParams(location.search)
+
+  let o = {
+   rows: s.get('rows') ? Number.parseInt(s.get('rows')!) : 5,
+   cols: s.get('cols') ? Number.parseInt(s.get('cols')!) : 5,
+   snake: s.get('snake') ? Number.parseInt(s.get('snake')!) : 5,
+   eggs: s.get('eggs') ? Number.parseInt(s.get('eggs')!) : 0,
+   size: {rows: 0, cols: 0}
+  }
+
+  o.eggs = o.eggs != 0 ? o.eggs : Math.floor(o.rows * o.cols / 15)
+  o.size = {rows: o.rows, cols: o.cols}
+  l.debug(o)
+  return o
+})()
+
+let context = createContext(options)
 
 function start() {
-  context = createContext(...options)
+  context = createContext(options)
   env.el.innerHTML = renderGame(context.snake)
 }
 
