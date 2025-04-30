@@ -22,7 +22,7 @@ body {
 }
 
 #app {
-  margin: var(--cell-size);
+  padding: var(--cell-size);
 }
 
 .field.gameover::before {
