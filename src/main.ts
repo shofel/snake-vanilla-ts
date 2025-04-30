@@ -33,6 +33,8 @@
 
 import './style.css'
 
+let l = console
+
 /* The model */
 
 type Point = {row: number, col: number}
@@ -49,12 +51,13 @@ interface Size {
 }
 
 /** State of a Snake game. */
-interface Snake {
+type Snake = {
   size: Size,
   direction: Direction,
   /* Snake is an array of points, ordered from the head to the tail. */
   snake: Point[],
   eggs: Point[],
+  status: 'playing' | 'gameover',
 }
 
 /* Render state as html */
@@ -101,7 +104,7 @@ function renderGame (state: Snake): HTMLElement['innerHTML'] {
   `).join('\n')
 
   return `
-    <div class='field'>
+    <div class='field ${state.status}'>
       ${rows}
     </div>
   `
@@ -143,6 +146,8 @@ function eggs (size: Size, eggs_: Snake['eggs'], head: Point)
 }
 
 function step (state: Snake): Snake {
+  if (state.status === 'gameover') return state
+
   let newHead = move(head(state.snake), state.direction)
   let [eaten, newEggs] = eggs(state.size, state.eggs, newHead)
   let newSnake = [
@@ -150,10 +155,20 @@ function step (state: Snake): Snake {
     ...(eaten ? state.snake : state.snake.slice(0, -1))
   ]
 
+  /* Passing lateral borders is fun. Gameover is a hit of top or bottom. */
+  let status: Snake['status'] =
+    (newHead.row >= 0 && newHead.row < state.size.cols)
+    ? 'playing'
+    : 'gameover'
+
+  l.debug('newHead', newHead)
+  l.debug('status', status)
+
   return {
     ...state,
-    snake: newSnake,
+    snake: (status != 'gameover' ? newSnake : state.snake),
     eggs: newEggs,
+    status,
   }
 }
 
@@ -189,6 +204,7 @@ let createContext = (
     snake: randomPoints(size, snakeSize),
     eggs: randomPoints(size, eggsCount),
     direction: 'down',
+    status: 'playing',
   } as Snake,
 })
 
@@ -199,7 +215,7 @@ const env = {
   el: document.querySelector<HTMLDivElement>('#app')!,
 }
 
-let context = createContext(env.el, {cols: 20, rows: 20}, 3, 3)
+let context = createContext(env.el, {cols: 5, rows: 5}, 3, 3)
 context.updateDom()
 
 listenArrows(env.body, (direction: Direction) => {
