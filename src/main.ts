@@ -94,7 +94,9 @@ function renderGame (state: Snake): HTMLElement['innerHTML'] {
   let rows = field.map(
     row => `
       <div class='row'>
+        <div class="margin"></div>
         ${row.map(renderCell).join('\n')}
+        <div class="margin"></div>
       </div>
   `).join('\n')
 

@@ -1,9 +1,14 @@
 :root {
+  --root-background: #242424;
+  --cell-background: gray;
+  --cell-gap-color:  #555;
+  --cell-size: 30px;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 1);
 
   color-scheme: light dark;
-  background-color: #242424;
+  background-color: var(--root-background);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,26 +19,28 @@
 body {
   margin: 0;
   padding: 0;
-  min-width: 100vw;
-  min-height: 100vh;
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  margin: var(--cell-size);
 }
 
 .field > .row {
   display: flex;
 }
 
+.field > .row > .margin {
+  background-color: var(--root-background);
+  flex: 1 1;
+  border: none;
+}
+
 .field > .row > div {
-  line-height: 20px;
+  line-height: var(--cell-size);
   text-align: center;
-  background-color: gray;
-  flex: 0 0 20px;
-  margin: 0.2px;
+  background-color: var(--cell-background);
+  flex: 0 0 var(--cell-size);
+  border: solid 1px var(--cell-gap-color);
 }
 
 .field > .row > .empty {
