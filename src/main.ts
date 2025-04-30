@@ -157,7 +157,7 @@ function step (state: Snake): Snake {
 
   /* Passing lateral borders is fun. Gameover is a hit of top or bottom. */
   let status: Snake['status'] =
-    (newHead.row >= 0 && newHead.row < state.size.cols)
+    (newHead.row >= 0 && newHead.row < state.size.rows)
     ? 'playing'
     : 'gameover'
 
