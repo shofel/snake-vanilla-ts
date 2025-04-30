@@ -19,6 +19,16 @@
  *    💅the `dedent` function for beautier raw html
  *    💅fix console error "downloadable font: rejected by sanitizer"
  *    💅support skins. Chars or sprites for cells
+ * ## From Zlata
+ *    󱇩 play on a tablet
+ *     + deploy
+ *    󱇩 show game over
+ *    󱇩 restart game
+ *    󱇩 option: if to respawn eaten eggs
+ * ## Maybe for Zlata
+ *    󱇩 presets
+ *    󱇩 config in url params
+ *    󱇩 option: fill window with cells (autosize)
 */
 
 import './style.css'
@@ -187,7 +197,7 @@ const env = {
   el: document.querySelector<HTMLDivElement>('#app')!,
 }
 
-let context = createContext(env.el, {cols: 10, rows: 10}, 3, 3)
+let context = createContext(env.el, {cols: 20, rows: 20}, 3, 3)
 context.updateDom()
 
 listenArrows(env.body, (direction: Direction) => {
